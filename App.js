@@ -1,10 +1,14 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import * as Location from "expo-location";
 import WeatherInfo from "./components/WeatherInfo";
+import UnitsPicker from "./components/UnitsPicker";
+import ReloadIcon from "./components/ReloadIcon";
+import WeatherDetails from "./components/WeatherDetails";
+import { colors } from "./utils/index";
+import { WEATHER_API_KEY } from "@env";
 
-const WEATHER_API_KEY = "d30ffc2029b81711e28f12ad8eccbefb";
 const BASE_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather?";
 
 export default function App() {
@@ -14,9 +18,10 @@ export default function App() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [unitsSystem]);
 
   async function load() {
+    setCurrentWeather(null);
     try {
       let { status } = await Location.requestPermissionsAsync();
 
@@ -50,14 +55,34 @@ export default function App() {
       <View style={styles.container}>
         <StatusBar style="auto" />
         <View style={styles.main}>
-          <WeatherInfo currentWeather={currentWeather} />
+          <UnitsPicker
+            unitsSystem={unitsSystem}
+            setUnitsSystem={setUnitsSystem}
+          />
+          <ReloadIcon load={load} />
+          <WeatherInfo
+            currentWeather={currentWeather}
+            unitsSystem={unitsSystem}
+          />
         </View>
+        <WeatherDetails
+          currentWeather={currentWeather}
+          unitsSystem={unitsSystem}
+        />
+      </View>
+    );
+  } else if (errorMessage) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>{errorMessage}</Text>
+        <ReloadIcon load={load} error={true} />
+        <StatusBar style="auto" />
       </View>
     );
   } else {
     return (
       <View style={styles.container}>
-        <Text>{errorMessage}</Text>
+        <ActivityIndicator size="large" color={colors.PRIMARY_COLOR} />
         <StatusBar style="auto" />
       </View>
     );
@@ -72,5 +97,9 @@ const styles = StyleSheet.create({
   main: {
     justifyContent: "center",
     flex: 1,
+  },
+  error: {
+    textAlign: "center",
+    marginBottom: 30,
   },
 });
